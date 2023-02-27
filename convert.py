@@ -5,11 +5,6 @@
 APP_NAME =  "skautIS to Google Contacts CSV converter"
 APP_VERSION = 2.2
 AUTHOR = "Lukáš Tesař <email@lukastesar.cz>"
-# This array is used later to determine dependencies and to install them, if needed
-DEPENDS =   [
-            ["pandas","pd"], 
-            ["openpyxl","opxl"]
-            ]
 
 # Importing basic Python modules
 # These should be always included in default installation
@@ -17,6 +12,9 @@ import subprocess
 import sys
 import os
 import argparse
+
+import pandas as pd
+import openpyxl as opxl
 
 # CONSTANTS for later use
 
@@ -76,13 +74,6 @@ def die(error):
     if not quiet: print("\nERROR: " + error)
     sys.exit(1)
 
-# Dependency installation function
-def install(dep):
-    if not quiet:
-        print("Dependency '" + dep + "' not installed. Passing on to pip to handle it...")
-        print("pip install " + dep)
-    subprocess.check_call([sys.executable, "-m", "pip", "install", dep])
-
 # First things first, handle commandline arguments (in case of --help or etc.)
 # This process is semi-automatic (for example, displaying the help message is handled fully within the 'argparse' module itself)
 
@@ -106,35 +97,6 @@ if not quiet:
     print(APP_NAME + ", v" + str(APP_VERSION))
     print("Made with <3 by " + AUTHOR)
     print()
-
-# Figured out it's best to inform the user about everything (unless he explicitly chose otherwise)
-if not quiet: print("Initialization - checking for dependencies...")
-
-# Now it's time to set some things up
-# - Check dependencies, if not found, install them
-
-# Just because we want that awesomeness to declare depends only at the beginning...
-# ... we need to import necessary modules the messy way (through globals() and __import__)
-
-# Depends are declared at the begining of the script (in info)
-# Import them one by one:
-for dep in DEPENDS:
-    # Assign more friendly names, so it's easier to recognize
-    module_name = dep[0]
-    global_name = dep[1]
-    try:
-        # Try to import the dependency
-        globals()[global_name] = __import__(module_name)
-    except ImportError:
-        # If it doesn't exist, install it
-        install(module_name)
-    finally:
-        try:
-            # Everything should be ok now...
-            globals()[global_name] = __import__(module_name)
-        except:
-            # If not, throw an error
-            die("Dependency installation failed.")
 
 # Now the actual process itself
 if not quiet: print("\nLoading the input file: " + input_path)
