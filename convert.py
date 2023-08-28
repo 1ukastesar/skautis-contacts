@@ -15,7 +15,7 @@ import pandas as pd
 # CONSTANTS for later use
 
 SKIP_ROWS = 6
-USE_COLS = [0, 1, 2, 4, 7, 8, 9, 10, 11]
+USE_COLS = [0, 1, 2, 4, 7, 8, 9, 10, 11, 12, 13]
 
 COL_RENAME_RULES = {
                     "Jméno":            "Given Name",
@@ -23,10 +23,12 @@ COL_RENAME_RULES = {
                     "Přezdívka":        "Nickname",
                     "Jednotka":         "Group Membership",
                     "Kategorie":        "Category",
-                    "Otec: mail":       "E-mail 1 - Value",
-                    "Matka: mail":      "E-mail 2 - Value",
-                    "Otec: telefon":    "Phone 1 - Value",
-                    "Matka: telefon":   "Phone 2 - Value"
+                    "E-mail (hlavní)":  "E-mail 1 - Value",
+                    "Otec: mail":       "E-mail 2 - Value",
+                    "Matka: mail":      "E-mail 3 - Value",
+                    "Telefon / mobil (hlavní)": "Phone 1 - Value",
+                    "Otec: telefon":    "Phone 2 - Value",
+                    "Matka: telefon":   "Phone 3 - Value",
                     }
 
 ADD_COLS =  [
@@ -54,10 +56,12 @@ ADD_COLS =  [
             [24, "Notes",               ""],
             [25, "Language",            ""],
             [26, "Photo",               ""],
-            [28, "E-mail 1 - Type",     "Otec"],
-            [30, "E-mail 2 - Type",     "* Matka"],
-            [32, "Phone 1 - Type",      "Otec"],
-            [34, "Phone 2 - Type",      "* Matka"]
+            [28, "E-mail 1  - Type",    "Dítě"],
+            [29, "Phone 1 - Type",      "Dítě"],
+            [30, "E-mail 2 - Type",     "Otec"],
+            [31, "Phone 2 - Type",      "Otec"],
+            [32, "E-mail 3 - Type",     "* Matka"],
+            [33, "Phone 3 - Type",      "* Matka"],
             ]
 
 GRPMEM_SEPARATOR =  " ::: "
@@ -102,7 +106,9 @@ try:
         input = pd.read_excel(input_path, 
                             skiprows = range(0,SKIP_ROWS), 
                             usecols = USE_COLS,
-                            dtype={"Matka: telefon": str, "Otec: telefon": str})
+                            dtype={"Matka: telefon": str,
+                                   "Otec: telefon": str,
+                                   "Telefon / mobil (hlavní)": str})
     except FileNotFoundError:
         die("Input file not found.")
     except IOError:
@@ -136,6 +142,7 @@ try:
     # - add +420 in the beginning of telephone numbers to be recognized correctly
     input["Phone 1 - Value"] = "+420" + input["Phone 1 - Value"].astype(str)
     input["Phone 2 - Value"] = "+420" + input["Phone 2 - Value"].astype(str)
+    input["Phone 3 - Value"] = "+420" + input["Phone 3 - Value"].astype(str)
 
     # - remove "+420nan", whichever cells is it in (this is a result of an empty phone number cell on the input)
     input.replace("+420nan", "", inplace = True)
