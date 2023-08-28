@@ -6,13 +6,11 @@ APP_NAME =  "skautIS to Google Contacts CSV converter"
 APP_VERSION = 2.2
 AUTHOR = "Lukáš Tesař <lukastesar@skaut.cz>"
 
-import subprocess
 import sys
 import os
 import argparse
 
 import pandas as pd
-import openpyxl as opxl
 
 # CONSTANTS for later use
 
