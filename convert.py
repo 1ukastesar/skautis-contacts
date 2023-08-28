@@ -68,7 +68,7 @@ GRPMEM_SUFFIX =     "* myContacts"
 
 # Error handler
 def die(error):
-    if not quiet: print("\nERROR: " + error)
+    if not quiet: print(f"\033[31;1mERROR:\033[0m {error}")
     sys.exit(1)
 
 parser = argparse.ArgumentParser()
@@ -76,7 +76,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("input", help = "input file path, desired data format is Excel spreadsheet (.xlsx)")
 parser.add_argument("output", help = "output file path, data will be exported in Google Contacts CSV (.csv) format")
 
-parser.add_argument("-q", "--quiet", help = "be quiet; do NOT print ANY information about the whole process, including any errors (not recommended, default FALSE)", 
+parser.add_argument("-q", "--quiet", help = "be quiet; do NOT print ANY information about the whole process (default False)", 
                     action = "store_true")
 
 args = parser.parse_args()
@@ -86,18 +86,16 @@ input_path = args.input
 output_path = args.output
 
 if not quiet:
-    print(APP_NAME + ", v" + str(APP_VERSION))
-    print("Made with <3 by " + AUTHOR)
-    print()
+    print(f"{APP_NAME}, v{str(APP_VERSION)}")
+    print(f"Made with <3 by {AUTHOR}\n")
 
-if not quiet: print("\nLoading the input file: " + input_path)
+if not quiet: print(f"Loading the input file: {input_path}")
 
 # Check if input_path exists
 if not os.path.exists(input_path):
-    if not os.path.exists(os.path.abspath(input_path)):
-        die("INPUT path doesn't exist.")
-    else:
-        input_path = os.path.abspath(input_path)
+    input_path = os.path.abspath(input_path)
+    if not os.path.exists(input_path):
+        die("Input path doesn't exist.")
 
 try:
     try:
@@ -107,9 +105,9 @@ try:
                             usecols = USE_COLS,
                             dtype={"Matka: telefon": str, "Otec: telefon": str})
     except FileNotFoundError:
-        die("Input file not found. \n")
+        die("Input file not found.")
     except IOError:
-        die("An I/O error occured when trying to open the input file. Maybe it is already used by another process?\n")
+        die("An I/O error occured when trying to open the input file. Maybe it is already used by another process?")
     # Something other happened - broken format or whatever
     except:
         raise
@@ -147,18 +145,18 @@ try:
     input.drop(columns = "Category", inplace = True)
 
 except:
-    die("An error occured when trying to open and parse the input file.\n")
+    die("An error occured when trying to open and parse the input file.")
 
 # Everything done, save it
 
-if not quiet: print("Saving the output file: " + output_path)
+if not quiet: print(f"Saving the output file: {output_path}")
 
 try:
     # We'll try to export it as csv and write to given path
     input.to_csv(output_path, index = None, header = True)
 except IOError:
-    die("An I/O error occured when trying to save the output file. Maybe it is already used by another process?\n")
+    die("An I/O error occured when trying to save the output file. Maybe it is already used by another process?")
 except:
-    die("An error occured when trying to save the output file.\n")
+    die("An error occured when trying to save the output file.")
 
-if not quiet: print("\nDone.")
+if not quiet: print("Done.")
