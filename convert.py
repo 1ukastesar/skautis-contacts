@@ -4,7 +4,7 @@
 # Information about the script, declared also as variables for later usage...
 APP_NAME =  "skautIS to Google Contacts CSV converter"
 APP_VERSION = 2.2
-AUTHOR = "Lukáš Tesař <email@lukastesar.cz>"
+AUTHOR = "Lukáš Tesař <lukastesar@skaut.cz>"
 
 # Importing basic Python modules
 # These should be always included in default installation
