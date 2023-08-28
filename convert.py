@@ -143,8 +143,8 @@ try:
     # - as a last thing, we drop the columns we no longer need
     input.drop(columns = "Category", inplace = True)
 
-except:
-    die("An error occured when trying to open and parse the input file.")
+except Exception as e:
+    die(f"An error occured when trying to open and parse the input file: {str(e)}")
 
 # Everything done, save it
 
