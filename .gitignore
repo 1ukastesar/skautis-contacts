@@ -1,5 +1,11 @@
+# Editor settings
 .vscode/
+
+# Python virtualenvs
+.env/
 .venv/
+env/
+venv/
 
 *.csv
 *.xlsx
