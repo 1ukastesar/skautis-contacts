@@ -9,7 +9,8 @@
 
 Install with your package manager or download from https://www.python.org/downloads/
 
-> **Note:** The latest version of this app was tested on Python 3.11, but it should generally work with Python 3.8 and later.
+> [!NOTE]
+> The latest version of this app was tested on Python 3.11, but it should generally work with Python 3.8 and later.
 
 1. Create virtual environment:
 ```bash
