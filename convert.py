@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Information about the script, declared also as variables for later usage...
-APP_NAME =  "skautIS to Google Contacts CSV converter"
-APP_VERSION = 2.7
-AUTHOR = "Lukáš Tesař <lukastesar@skaut.cz>"
-
 import sys
 import os
 import argparse
 
 import pandas as pd
+
+# Information about the script, declared also as variables for later usage...
+APP_NAME =  "skautIS to Google Contacts CSV converter"
+APP_VERSION = 2.7
+AUTHOR = "Lukáš Tesař <lukastesar@skaut.cz>"
 
 # CONSTANTS for later use
 
@@ -71,7 +71,8 @@ GRPMEM_SUFFIX =     "* myContacts"
 
 # Error handler
 def die(error):
-    if not quiet: print(f"\033[31;1mERROR:\033[0m {error}")
+    if not quiet: 
+        print(f"\033[31;1mERROR:\033[0m {error}")
     sys.exit(1)
 
 parser = argparse.ArgumentParser()
@@ -92,7 +93,8 @@ if not quiet:
     print(f"{APP_NAME}, v{str(APP_VERSION)}")
     print(f"Made with <3 by {AUTHOR}\n")
 
-if not quiet: print(f"Loading the input file: {input_path}")
+if not quiet:
+    print(f"Loading the input file: {input_path}")
 
 # Check if input_path exists
 if not os.path.exists(input_path):
@@ -117,7 +119,8 @@ try:
     except:
         raise
 
-    if not quiet: print("Processing...")
+    if not quiet:
+        print("Processing...")
 
     # Then we'll make it look like a Google CSV:
     # - some columns we'll rename
@@ -137,7 +140,8 @@ try:
                             + GRPMEM_SEPARATOR \
                             + GRPMEM_SUFFIX
 
-    if not quiet: print("A few more changes to be done...")
+    if not quiet:
+        print("A few more changes to be done...")
 
     # - add +420 in the beginning of telephone numbers to be recognized correctly
     input["Phone 1 - Value"] = "+420" + input["Phone 1 - Value"].astype(str)
@@ -155,14 +159,16 @@ except Exception as e:
 
 # Everything done, save it
 
-if not quiet: print(f"Saving the output file: {output_path}")
+if not quiet:
+    print(f"Saving the output file: {output_path}")
 
 try:
     # We'll try to export it as csv and write to given path
     input.to_csv(output_path, index = None, header = True)
 except IOError:
     die("An I/O error occured when trying to save the output file. Maybe it is already used by another process?")
-except:
+except BaseException:
     die("An error occured when trying to save the output file.")
 
-if not quiet: print("Done.")
+if not quiet:
+    print("Done.")
