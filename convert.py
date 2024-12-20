@@ -133,6 +133,9 @@ try:
     # - this one combines values from two other columns instead (Given + Family name = Full name)
     input["Name"] = input["Given Name"] + " " + input["Family Name"]
 
+    # Replace singular with plural in category
+    input["Category"] = input["Category"].replace({"Vlče": "Vlčata", "Skaut": "Skauti", "Rover": "Roveři"})
+
     # - and some need bigger changes (combining, renaming and adding values)
     input["Group Membership"] = input["Group Membership"].astype(str) \
                             + GRPMEM_SEPARATOR \
