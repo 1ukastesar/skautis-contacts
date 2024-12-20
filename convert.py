@@ -73,9 +73,13 @@ GRPMEM_SUFFIX = "* myContacts"
 # Error handler
 def die(error):
     if not quiet:
-        print(f"\033[31;1mERROR:\033[0m {error}")
+        print(f"\033[31;1mERROR:\033[0m {error}", file=sys.stderr)
     sys.exit(1)
 
+
+def iprint(msg: str):
+    if not quiet:
+        print(msg, file=sys.stderr)
 
 parser = argparse.ArgumentParser()
 # INPUT and OUTPUT file arguments
@@ -100,12 +104,10 @@ quiet = args.quiet
 input_path = args.input
 output_path = args.output
 
-if not quiet:
-    print(f"{APP_NAME}, v{str(APP_VERSION)}")
-    print(f"Made with <3 by {AUTHOR}\n")
+iprint(f"{APP_NAME}, v{str(APP_VERSION)}")
+iprint(f"Made with <3 by {AUTHOR}\n")
 
-if not quiet:
-    print(f"Loading the input file: {input_path}")
+iprint(f"Loading the input file: {input_path}")
 
 # Check if input_path exists
 if not os.path.exists(input_path):
@@ -136,8 +138,7 @@ try:
     except:
         raise
 
-    if not quiet:
-        print("Processing...")
+    iprint("Processing...")
 
     # Then we'll make it look like a Google CSV:
     # - some columns we'll rename
@@ -164,8 +165,7 @@ try:
         + GRPMEM_SUFFIX
     )
 
-    if not quiet:
-        print("A few more changes to be done...")
+    iprint("A few more changes to be done...")
 
     # - add +420 in the beginning of telephone numbers to be recognized correctly
     input["Phone 1 - Value"] = "+420" + input["Phone 1 - Value"].astype(str)
@@ -183,8 +183,7 @@ except Exception as e:
 
 # Everything done, save it
 
-if not quiet:
-    print(f"Saving the output file: {output_path}")
+iprint(f"Saving the output file: {output_path}")
 
 try:
     # We'll try to export it as csv and write to given path
@@ -196,5 +195,4 @@ except IOError:
 except BaseException:
     die("An error occured when trying to save the output file.")
 
-if not quiet:
-    print("Done.")
+iprint("Done.")
