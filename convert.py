@@ -134,9 +134,6 @@ try:
         die(
             "An I/O error occured when trying to open the input file. Maybe it is already used by another process?"
         )
-    # Something other happened - broken format or whatever
-    except:
-        raise
 
     iprint("Processing...")
 
