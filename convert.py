@@ -7,12 +7,9 @@ import argparse
 
 import pandas as pd
 
-# Information about the script, declared also as variables for later usage...
 APP_NAME = "skautIS to Google Contacts CSV converter"
 APP_VERSION = 2.8
 AUTHOR = "Lukáš Tesař <lukastesar@skaut.cz>"
-
-# CONSTANTS for later use
 
 SKIP_ROWS = 6
 USE_COLS = [0, 1, 2, 4, 7, 8, 9, 10, 11, 12, 13]
@@ -67,15 +64,13 @@ ADD_COLS = [
 GRPMEM_SEPARATOR = " ::: "
 GRPMEM_SUFFIX = "* myContacts"
 
-# FUNCTIONS for later use
-
-
 # Error handler
 def die(error):
     if not quiet:
         print(f"\033[31;1mERROR:\033[0m {error}", file=sys.stderr)
     sys.exit(1)
 
+# Info print
 
 def iprint(msg: str):
     if not quiet:
