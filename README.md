@@ -11,7 +11,7 @@ Nainstaluj pomocí správce balíčků nebo stáhni z https://www.python.org/dow
 > [!TIP]
 > Nejnovější verze skriptu byla testována na Python 3.12.3, ale obecně by měla fungovat s Python 3.8 a novějším.
 
-## Závislosti
+### Závislosti
 
 1. Vytvoř virtuální prostředí:
 ```bash
