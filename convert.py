@@ -34,26 +34,19 @@ def convert():
             die("Input path doesn't exist.")
 
     try:
-        try:
-            # First, we (try to) load the input file and parse it into DataFrame (pd)
-            skip_rows = 6
-            use_cols = [0, 1, 2, 4, 7, 8, 9, 10, 11, 12, 13]
-            input = pd.read_excel(
-                input_path,
-                skiprows=range(0, skip_rows),
-                usecols=use_cols,
-                dtype={
-                    "Matka: telefon": str,
-                    "Otec: telefon": str,
-                    "Telefon / mobil (hlavní)": str,
-                },
-            )
-        except FileNotFoundError:
-            die("Input file not found.")
-        except IOError:
-            die(
-                "An I/O error occured when trying to open the input file. Maybe it is already used by another process?"
-            )
+        # First, we (try to) load the input file and parse it into DataFrame (pd)
+        skip_rows = 6
+        use_cols = [0, 1, 2, 4, 7, 8, 9, 10, 11, 12, 13]
+        input = pd.read_excel(
+            input_path,
+            skiprows=range(0, skip_rows),
+            usecols=use_cols,
+            dtype={
+                "Matka: telefon": str,
+                "Otec: telefon": str,
+                "Telefon / mobil (hlavní)": str,
+            },
+        )
 
         # Then we'll make it look like a Google CSV:
         # - some columns we'll rename
@@ -129,6 +122,13 @@ def convert():
 
         # - as a last thing, we drop the columns we no longer need
         input.drop(columns="Category", inplace=True)
+
+    except FileNotFoundError:
+        die("Input file not found.")
+    except IOError:
+        die(
+            "An I/O error occured when trying to open the input file. Maybe it is already used by another process?"
+        )
 
     except Exception as e:
         die(f"An error occured when trying to open and parse the input file: {str(e)}")
