@@ -160,12 +160,9 @@ try:
     iprint("A few more changes to be done...")
 
     # - add +420 in the beginning of telephone numbers to be recognized correctly
-    input["Phone 1 - Value"] = "+420" + input["Phone 1 - Value"].astype(str)
-    input["Phone 2 - Value"] = "+420" + input["Phone 2 - Value"].astype(str)
-    input["Phone 3 - Value"] = "+420" + input["Phone 3 - Value"].astype(str)
-
-    # - remove "+420nan", whichever cells is it in (this is a result of an empty phone number cell on the input)
-    input.replace("+420nan", "", inplace=True)
+    for i in [1, 2, 3]:
+        key = f"Phone {i} - Value"
+        input[key] = input[key].apply(lambda num: f"+420{str(num)}" if pd.notna(num) and num else "")
 
     # - as a last thing, we drop the columns we no longer need
     input.drop(columns="Category", inplace=True)
