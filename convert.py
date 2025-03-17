@@ -143,7 +143,7 @@ try:
     # - this one combines values from two other columns instead (Given + Family name = Full name)
     input["Name"] = input["Given Name"] + " " + input["Family Name"]
 
-    # Replace singular with plural in category
+    # - replace singular with plural in category
     input["Category"].replace(
         {"Vlče": "Vlčata", "Skaut": "Skauti", "Rover": "Roveři"}, inplace=True
     )
