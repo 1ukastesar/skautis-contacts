@@ -6,16 +6,19 @@ import sys
 
 import pandas as pd
 
+
 # Error handler
 def die(error):
     print(f"\033[31;1mERROR:\033[0m {error}", file=sys.stderr)
     sys.exit(1)
 
+
 def convert():
     parser = argparse.ArgumentParser()
     # INPUT and OUTPUT file arguments
     parser.add_argument(
-        "input", help="input file path, desired data format is Excel spreadsheet (.xlsx)"
+        "input",
+        help="input file path, desired data format is Excel spreadsheet (.xlsx)",
     )
     parser.add_argument(
         "output",
@@ -62,7 +65,7 @@ def convert():
             "Telefon / mobil (hlavní)": "Phone 1 - Value",
             "Otec: telefon": "Phone 2 - Value",
             "Matka: telefon": "Phone 3 - Value",
-            }
+        }
         input.rename(columns=rename_rules, inplace=True)
 
         # - some just need to be added (with no values, in most cases)
@@ -97,7 +100,7 @@ def convert():
             [31, "Phone 2 - Type", "Otec"],
             [32, "E-mail 3 - Type", "* Matka"],
             [33, "Phone 3 - Type", "* Matka"],
-            ]
+        ]
         for col in add_cols:
             input.insert(col[0], col[1], col[2])
 
@@ -112,13 +115,15 @@ def convert():
         # - and some need bigger changes (combining, renaming and adding values)
         input["Group Membership"] = input.apply(
             lambda row: f"{row['Group Membership']} ::: {row['Category']} ::: * myContacts",
-            axis=1
+            axis=1,
         )
 
         # - add +420 in the beginning of telephone numbers to be recognized correctly
         for i in [1, 2, 3]:
             key = f"Phone {i} - Value"
-            input[key] = input[key].apply(lambda num: f"+420{str(num)}" if pd.notna(num) and num else "")
+            input[key] = input[key].apply(
+                lambda num: f"+420{str(num)}" if pd.notna(num) and num else ""
+            )
 
         # - as a last thing, we drop the columns we no longer need
         input.drop(columns="Category", inplace=True)
@@ -144,6 +149,7 @@ def convert():
         )
     except BaseException:
         die("An error occured when trying to save the output file.")
+
 
 if __name__ == "main":
     convert()
