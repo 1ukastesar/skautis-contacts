@@ -144,8 +144,8 @@ try:
     input["Name"] = input["Given Name"] + " " + input["Family Name"]
 
     # Replace singular with plural in category
-    input["Category"] = input["Category"].replace(
-        {"Vlče": "Vlčata", "Skaut": "Skauti", "Rover": "Roveři"}
+    input["Category"].replace(
+        {"Vlče": "Vlčata", "Skaut": "Skauti", "Rover": "Roveři"}, inplace=True
     )
 
     # - and some need bigger changes (combining, renaming and adding values)
