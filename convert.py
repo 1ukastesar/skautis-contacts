@@ -6,56 +6,6 @@ import sys
 
 import pandas as pd
 
-SKIP_ROWS = 6
-USE_COLS = [0, 1, 2, 4, 7, 8, 9, 10, 11, 12, 13]
-
-COL_RENAME_RULES = {
-    "Jméno": "Given Name",
-    "Příjmení": "Family Name",
-    "Přezdívka": "Nickname",
-    "Jednotka": "Group Membership",
-    "Kategorie": "Category",
-    "E-mail (hlavní)": "E-mail 1 - Value",
-    "Otec: mail": "E-mail 2 - Value",
-    "Matka: mail": "E-mail 3 - Value",
-    "Telefon / mobil (hlavní)": "Phone 1 - Value",
-    "Otec: telefon": "Phone 2 - Value",
-    "Matka: telefon": "Phone 3 - Value",
-}
-
-ADD_COLS = [
-    [0, "Name", ""],
-    [2, "Additional Name", ""],
-    [4, "Yomi Name", ""],
-    [5, "Given Name Yomi", ""],
-    [6, "Additional Name Yomi", ""],
-    [7, "Family Name Yomi", ""],
-    [8, "Name Prefix", ""],
-    [9, "Name Suffix", ""],
-    [10, "Initials", ""],
-    [12, "Short Name", ""],
-    [13, "Maiden Name", ""],
-    [14, "Birthday", ""],
-    [15, "Gender", ""],
-    [16, "Location", ""],
-    [17, "Billing Information", ""],
-    [18, "Mileage", ""],
-    [19, "Occupation", ""],
-    [20, "Hobby", ""],
-    [21, "Sensitivity", ""],
-    [22, "Priority", ""],
-    [23, "Subject", ""],
-    [24, "Notes", ""],
-    [25, "Language", ""],
-    [26, "Photo", ""],
-    [28, "E-mail 1  - Type", "Dítě"],
-    [29, "Phone 1 - Type", "Dítě"],
-    [30, "E-mail 2 - Type", "Otec"],
-    [31, "Phone 2 - Type", "Otec"],
-    [32, "E-mail 3 - Type", "* Matka"],
-    [33, "Phone 3 - Type", "* Matka"],
-]
-
 # Error handler
 def die(error):
     if not quiet:
@@ -94,10 +44,12 @@ if not os.path.exists(input_path):
 try:
     try:
         # First, we (try to) load the input file and parse it into DataFrame (pd)
+        skip_rows = 6
+        use_cols = [0, 1, 2, 4, 7, 8, 9, 10, 11, 12, 13]
         input = pd.read_excel(
             input_path,
-            skiprows=range(0, SKIP_ROWS),
-            usecols=USE_COLS,
+            skiprows=range(0, skip_rows),
+            usecols=use_cols,
             dtype={
                 "Matka: telefon": str,
                 "Otec: telefon": str,
@@ -113,10 +65,55 @@ try:
 
     # Then we'll make it look like a Google CSV:
     # - some columns we'll rename
-    input.rename(columns=COL_RENAME_RULES, inplace=True)
+    rename_rules = {
+        "Jméno": "Given Name",
+        "Příjmení": "Family Name",
+        "Přezdívka": "Nickname",
+        "Jednotka": "Group Membership",
+        "Kategorie": "Category",
+        "E-mail (hlavní)": "E-mail 1 - Value",
+        "Otec: mail": "E-mail 2 - Value",
+        "Matka: mail": "E-mail 3 - Value",
+        "Telefon / mobil (hlavní)": "Phone 1 - Value",
+        "Otec: telefon": "Phone 2 - Value",
+        "Matka: telefon": "Phone 3 - Value",
+        }
+    input.rename(columns=rename_rules, inplace=True)
 
     # - some just need to be added (with no values, in most cases)
-    for col in ADD_COLS:
+    add_cols = [
+        [0, "Name", ""],
+        [2, "Additional Name", ""],
+        [4, "Yomi Name", ""],
+        [5, "Given Name Yomi", ""],
+        [6, "Additional Name Yomi", ""],
+        [7, "Family Name Yomi", ""],
+        [8, "Name Prefix", ""],
+        [9, "Name Suffix", ""],
+        [10, "Initials", ""],
+        [12, "Short Name", ""],
+        [13, "Maiden Name", ""],
+        [14, "Birthday", ""],
+        [15, "Gender", ""],
+        [16, "Location", ""],
+        [17, "Billing Information", ""],
+        [18, "Mileage", ""],
+        [19, "Occupation", ""],
+        [20, "Hobby", ""],
+        [21, "Sensitivity", ""],
+        [22, "Priority", ""],
+        [23, "Subject", ""],
+        [24, "Notes", ""],
+        [25, "Language", ""],
+        [26, "Photo", ""],
+        [28, "E-mail 1  - Type", "Dítě"],
+        [29, "Phone 1 - Type", "Dítě"],
+        [30, "E-mail 2 - Type", "Otec"],
+        [31, "Phone 2 - Type", "Otec"],
+        [32, "E-mail 3 - Type", "* Matka"],
+        [33, "Phone 3 - Type", "* Matka"],
+        ]
+    for col in add_cols:
         input.insert(col[0], col[1], col[2])
 
     # - this one combines values from two other columns instead (Given + Family name = Full name)
