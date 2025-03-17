@@ -6,10 +6,6 @@ import sys
 
 import pandas as pd
 
-APP_NAME = "skautIS to Google Contacts CSV converter"
-APP_VERSION = 2.8
-AUTHOR = "Lukáš Tesař <lukastesar@skaut.cz>"
-
 SKIP_ROWS = 6
 USE_COLS = [0, 1, 2, 4, 7, 8, 9, 10, 11, 12, 13]
 
@@ -66,12 +62,6 @@ def die(error):
         print(f"\033[31;1mERROR:\033[0m {error}", file=sys.stderr)
     sys.exit(1)
 
-# Info print
-
-def iprint(msg: str):
-    if not quiet:
-        print(msg, file=sys.stderr)
-
 parser = argparse.ArgumentParser()
 # INPUT and OUTPUT file arguments
 parser.add_argument(
@@ -94,11 +84,6 @@ args = parser.parse_args()
 quiet = args.quiet
 input_path = args.input
 output_path = args.output
-
-iprint(f"{APP_NAME}, v{str(APP_VERSION)}")
-iprint(f"Made with <3 by {AUTHOR}\n")
-
-iprint(f"Loading the input file: {input_path}")
 
 # Check if input_path exists
 if not os.path.exists(input_path):
@@ -126,8 +111,6 @@ try:
             "An I/O error occured when trying to open the input file. Maybe it is already used by another process?"
         )
 
-    iprint("Processing...")
-
     # Then we'll make it look like a Google CSV:
     # - some columns we'll rename
     input.rename(columns=COL_RENAME_RULES, inplace=True)
@@ -150,8 +133,6 @@ try:
         axis=1
     )
 
-    iprint("A few more changes to be done...")
-
     # - add +420 in the beginning of telephone numbers to be recognized correctly
     for i in [1, 2, 3]:
         key = f"Phone {i} - Value"
@@ -165,8 +146,6 @@ except Exception as e:
 
 # Everything done, save it
 
-iprint(f"Saving the output file: {output_path}")
-
 try:
     # We'll try to export it as csv and write to given path
     input.to_csv(output_path, index=None, header=True)
@@ -176,5 +155,3 @@ except IOError:
     )
 except BaseException:
     die("An error occured when trying to save the output file.")
-
-iprint("Done.")
