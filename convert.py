@@ -61,9 +61,6 @@ ADD_COLS = [
     [33, "Phone 3 - Type", "* Matka"],
 ]
 
-GRPMEM_SEPARATOR = " ::: "
-GRPMEM_SUFFIX = "* myContacts"
-
 # Error handler
 def die(error):
     if not quiet:
@@ -149,12 +146,9 @@ try:
     )
 
     # - and some need bigger changes (combining, renaming and adding values)
-    input["Group Membership"] = (
-        input["Group Membership"].astype(str)
-        + GRPMEM_SEPARATOR
-        + input["Category"].astype(str)
-        + GRPMEM_SEPARATOR
-        + GRPMEM_SUFFIX
+    input["Group Membership"] = input.apply(
+        lambda row: f"{row['Group Membership']} ::: {row['Category']} ::: * myContacts",
+        axis=1
     )
 
     iprint("A few more changes to be done...")
