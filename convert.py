@@ -8,8 +8,7 @@ import pandas as pd
 
 # Error handler
 def die(error):
-    if not quiet:
-        print(f"\033[31;1mERROR:\033[0m {error}", file=sys.stderr)
+    print(f"\033[31;1mERROR:\033[0m {error}", file=sys.stderr)
     sys.exit(1)
 
 parser = argparse.ArgumentParser()
@@ -22,16 +21,8 @@ parser.add_argument(
     help="output file path, data will be exported in Google Contacts CSV (.csv) format",
 )
 
-parser.add_argument(
-    "-q",
-    "--quiet",
-    help="be quiet; do NOT print ANY information about the whole process (default False)",
-    action="store_true",
-)
-
 args = parser.parse_args()
 
-quiet = args.quiet
 input_path = args.input
 output_path = args.output
 
