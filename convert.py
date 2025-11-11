@@ -108,8 +108,11 @@ def convert():
         input["Name"] = input["Given Name"] + " " + input["Family Name"]
 
         # - replace singular with plural in category
-        input["Category"].replace(
-            {"Vlče": "Vlčata", "Skaut": "Skauti", "Rover": "Roveři"}, inplace=True
+        # Avoid inplace on a Series (pandas will warn about chained assignment).
+        # Assign the replaced Series back to the DataFrame to ensure we operate
+        # on the original object (compatible with pandas 3.0 behavior).
+        input["Category"] = input["Category"].replace(
+            {"Vlče": "Vlčata", "Skaut": "Skauti", "Rover": "Roveři"}
         )
 
         # - and some need bigger changes (combining, renaming and adding values)
