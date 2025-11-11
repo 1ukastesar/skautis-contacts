@@ -151,5 +151,5 @@ def convert():
         die("An error occured when trying to save the output file.")
 
 
-if __name__ == "main":
+if __name__ == "__main__":
     convert()
