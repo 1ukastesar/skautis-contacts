@@ -18,21 +18,25 @@ app.config["DEBUG"] = False
 app.config["ENV"] = "production"
 app.config.from_object("config")
 
-APP_VERSION = "1.0"
-
 ALLOWED_EXTENSIONS = set(["xlsx"])
 
 
-def get_latest_commit_hash(repo_path="."):
-    """Get short hash of the latest commit."""
+def get_git_version(repo_path="."):
+    """Get version info from git (nearest tag + short commit hash)."""
     try:
         repo = Repo(repo_path)
-        hexsha = repo.head.commit.hexsha
-        short_hexsha = hexsha[:7]
-        return short_hexsha
+        hexsha = repo.head.commit.hexsha[:7]
+
+        # Try to get the nearest tag
+        try:
+            tag = repo.git.describe("--tags", "--abbrev=0")
+        except Exception:
+            tag = None
+
+        return tag, hexsha
     except Exception as e:
-        print(f"Error retrieving commit hash: {e}")
-        return None
+        print(f"Error retrieving git info: {e}")
+        return None, None
 
 
 def is_allowed_file(filename: str) -> bool:
@@ -76,7 +80,7 @@ def delete_input():
 def index():
     """Main route for uploading and converting files."""
     delete_output()
-    hexsha = get_latest_commit_hash()
+    version, hexsha = get_git_version()
     error = None
 
     if request.method == "POST":
@@ -111,7 +115,7 @@ def index():
             error = "Please upload a valid Excel file (.xlsx)"
 
     return render_template(
-        "index.jinja", version=APP_VERSION, hexsha=hexsha, error=error
+        "index.jinja", version=version, hexsha=hexsha, error=error
     )
 
 

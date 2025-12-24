@@ -79,7 +79,7 @@
     <div class="center">
         <div>
             <h1>🏕️ SkautIS Contacts Converter</h1>
-            <h3>hexsha: {{ hexsha }}</h3>
+            <h3>{% if version %}{{ version }}{% endif %}{% if version and hexsha %} / {% endif %}{% if hexsha %}{{ hexsha }}{% endif %}</h3>
 
             <p class="description">
                 Nahrajte Excel soubor (.xlsx) exportovaný ze SkautISu a stáhněte si kontakty
@@ -95,10 +95,6 @@
                 <br>
                 <button type="submit">Převést a stáhnout</button>
             </form>
-
-            <div class="footer">
-                v{{ version }}
-            </div>
         </div>
     </div>
 </body>
