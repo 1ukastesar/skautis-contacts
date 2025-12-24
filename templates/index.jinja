@@ -90,12 +90,20 @@
             <div class="error">{{ error }}</div>
             {% endif %}
 
-            <form method="POST" action="/" enctype="multipart/form-data">
-                <input type="file" name="file" accept=".xlsx">
+            <form method="POST" action="/" enctype="multipart/form-data" id="uploadForm">
+                <input type="file" name="file" accept=".xlsx" id="fileInput">
                 <br>
                 <button type="submit">Převést a stáhnout</button>
             </form>
         </div>
     </div>
+    <script>
+        // Clear file input after form submission (download starts)
+        document.getElementById('uploadForm').addEventListener('submit', function() {
+            setTimeout(function() {
+                document.getElementById('fileInput').value = '';
+            }, 100);
+        });
+    </script>
 </body>
 </html>
