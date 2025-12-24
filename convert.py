@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+"""
+SkautIS Contacts Converter
+
+Converts SkautIS Excel export to Google Contacts CSV format.
+
+Author: Lukas Tesar <lukastesar03@gmail.com>
+"""
 
 import argparse
 import os
@@ -7,40 +14,44 @@ import sys
 import pandas as pd
 
 
-# Error handler
+class ConversionError(Exception):
+    """Exception raised when conversion fails."""
+
+    pass
+
+
+# Error handler for CLI mode
 def die(error):
+    """Print error message and exit."""
     print(f"\033[31;1mERROR:\033[0m {error}", file=sys.stderr)
     sys.exit(1)
 
 
-def convert():
-    parser = argparse.ArgumentParser()
-    # INPUT and OUTPUT file arguments
-    parser.add_argument(
-        "input",
-        help="input file path, desired data format is Excel spreadsheet (.xlsx)",
-    )
-    parser.add_argument(
-        "output",
-        help="output file path, data will be exported in Google Contacts CSV (.csv) format",
-    )
+def convert(input_path: str, output_path: str) -> None:
+    """
+    Convert SkautIS Excel export to Google Contacts CSV format.
 
-    args = parser.parse_args()
+    Args:
+        input_path: Path to input Excel file (.xlsx)
+        output_path: Path for output CSV file
 
-    input_path = args.input
-    output_path = args.output
-
+    Raises:
+        ConversionError: If conversion fails
+        FileNotFoundError: If input file not found
+        IOError: If I/O error occurs
+    """
     # Check if input_path exists
     if not os.path.exists(input_path):
-        input_path = os.path.abspath(input_path)
-        if not os.path.exists(input_path):
-            die("Input path doesn't exist.")
+        abs_path = os.path.abspath(input_path)
+        if not os.path.exists(abs_path):
+            raise FileNotFoundError(f"Input path doesn't exist: {input_path}")
+        input_path = abs_path
 
     try:
         # First, we (try to) load the input file and parse it into DataFrame (pd)
         skip_rows = 6
         use_cols = [0, 1, 2, 4, 7, 8, 9, 10, 11, 12, 13]
-        input = pd.read_excel(
+        df = pd.read_excel(
             input_path,
             skiprows=range(0, skip_rows),
             usecols=use_cols,
@@ -66,7 +77,7 @@ def convert():
             "Otec: telefon": "Phone 2 - Value",
             "Matka: telefon": "Phone 3 - Value",
         }
-        input.rename(columns=rename_rules, inplace=True)
+        df.rename(columns=rename_rules, inplace=True)
 
         # - some just need to be added (with no values, in most cases)
         add_cols = [
@@ -102,21 +113,21 @@ def convert():
             [33, "Phone 3 - Type", "* Matka"],
         ]
         for col in add_cols:
-            input.insert(col[0], col[1], col[2])
+            df.insert(col[0], col[1], col[2])
 
         # - this one combines values from two other columns instead (Given + Family name = Full name)
-        input["Name"] = input["Given Name"] + " " + input["Family Name"]
+        df["Name"] = df["Given Name"] + " " + df["Family Name"]
 
         # - replace singular with plural in category
         # Avoid inplace on a Series (pandas will warn about chained assignment).
         # Assign the replaced Series back to the DataFrame to ensure we operate
         # on the original object (compatible with pandas 3.0 behavior).
-        input["Category"] = input["Category"].replace(
+        df["Category"] = df["Category"].replace(
             {"Vlče": "Vlčata", "Skaut": "Skauti", "Rover": "Roveři"}
         )
 
         # - and some need bigger changes (combining, renaming and adding values)
-        input["Group Membership"] = input.apply(
+        df["Group Membership"] = df.apply(
             lambda row: f"{row['Group Membership']} ::: {row['Category']} ::: * myContacts",
             axis=1,
         )
@@ -124,35 +135,59 @@ def convert():
         # - add +420 in the beginning of telephone numbers to be recognized correctly
         for i in [1, 2, 3]:
             key = f"Phone {i} - Value"
-            input[key] = input[key].apply(
+            df[key] = df[key].apply(
                 lambda num: f"+420{str(num)}" if pd.notna(num) and num else ""
             )
 
         # - as a last thing, we drop the columns we no longer need
-        input.drop(columns="Category", inplace=True)
+        df.drop(columns="Category", inplace=True)
 
     except FileNotFoundError:
-        die("Input file not found.")
+        raise FileNotFoundError("Input file not found.")
     except IOError:
-        die(
-            "An I/O error occured when trying to open the input file. Maybe it is already used by another process?"
+        raise IOError(
+            "An I/O error occurred when trying to open the input file. Maybe it is already used by another process?"
         )
-
     except Exception as e:
-        die(f"An error occured when trying to open and parse the input file: {str(e)}")
+        raise ConversionError(
+            f"An error occurred when trying to open and parse the input file: {str(e)}"
+        )
 
     # Everything done, save it
 
     try:
         # We'll try to export it as csv and write to given path
-        input.to_csv(output_path, index=None, header=True)
+        df.to_csv(output_path, index=None, header=True)
     except IOError:
-        die(
-            "An I/O error occured when trying to save the output file. Maybe it is already used by another process?"
+        raise IOError(
+            "An I/O error occurred when trying to save the output file. Maybe it is already used by another process?"
         )
-    except BaseException:
-        die("An error occured when trying to save the output file.")
+    except Exception as e:
+        raise ConversionError(f"An error occurred when trying to save the output file: {str(e)}")
+
+
+def main():
+    """CLI entry point for the converter."""
+    parser = argparse.ArgumentParser(
+        description="Convert SkautIS Excel export to Google Contacts CSV format."
+    )
+    parser.add_argument(
+        "input",
+        help="input file path, desired data format is Excel spreadsheet (.xlsx)",
+    )
+    parser.add_argument(
+        "output",
+        help="output file path, data will be exported in Google Contacts CSV (.csv) format",
+    )
+
+    args = parser.parse_args()
+
+    try:
+        convert(args.input, args.output)
+        print(f"Successfully converted {args.input} to {args.output}")
+    except (FileNotFoundError, IOError, ConversionError) as e:
+        die(str(e))
 
 
 if __name__ == "__main__":
-    convert()
+    main()

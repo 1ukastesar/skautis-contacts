@@ -1,0 +1,20 @@
+services:
+  server:
+    container_name: skautis-contacts
+    build: .
+    expose:
+      - 5000
+    networks:
+      - proxy
+    restart: unless-stopped
+    volumes:
+      - .:/app
+    logging:
+      driver: syslog
+      options:
+        tag: 'skautis-contacts'
+
+networks:
+  proxy:
+    name: npm-proxy
+    external: true
