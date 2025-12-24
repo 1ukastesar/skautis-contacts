@@ -94,7 +94,7 @@ Skript lze stále používat z příkazové řádky:
 ## Import do Google Contacts
 
 > [!IMPORTANT]
-> Doporučuji vizuální kontrolu vytvořeného CSV, zda se zdá být v pořádku. Mělo by odpovídat [ukázkové šabloně](https://docs.google.com/spreadsheets/u/1/d/1aKXGNF0YMEPRjIuyrl0nUeG4vOiGl6jEj5ikYRc5dl4/copy).
+> Doporučuji vizuální kontrolu vytvořeného CSV, zda se zdá být v pořádku. Mělo by odpovídat [ukázkové šabloně](https://docs.google.com/spreadsheets/d/1trkW9YG7CEDyGm8ptTOIhRRT779qqiGoMRbx6QPbWMM/copy).
 
 1. Importuj stažený `.csv` soubor do Google Contacts.
 2. Nezapomeň poté smazat staré kontakty, abys předešel duplicitám.
