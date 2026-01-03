@@ -14,4 +14,4 @@ RUN git config --global --add safe.directory /app
 # Create necessary directories
 RUN mkdir -p static/input static/output
 
-CMD ["python3", "app.py"]
+CMD ["gunicorn", "-b", "0.0.0.0:5000", "app:app"]
