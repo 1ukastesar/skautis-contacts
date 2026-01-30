@@ -22,10 +22,11 @@ ALLOWED_EXTENSIONS = set(["xlsx"])
 
 
 def get_git_version(repo_path="."):
-    """Get version info from git (nearest tag + short commit hash)."""
+    """Get version info from git (nearest tag + short commit hash) and GitHub URL."""
     try:
         repo = Repo(repo_path)
-        hexsha = repo.head.commit.hexsha[:7]
+        hexsha = repo.head.commit.hexsha
+        hexsha_short = hexsha[:7]
 
         # Try to get the nearest tag
         try:
@@ -33,10 +34,24 @@ def get_git_version(repo_path="."):
         except Exception:
             tag = None
 
-        return tag, hexsha
+        # Get GitHub URL from remote
+        github_url = None
+        try:
+            remote_url = repo.remote("origin").url
+            # Convert SSH URL to HTTPS
+            if remote_url.startswith("git@"):
+                # git@github.com:user/repo.git -> https://github.com/user/repo
+                remote_url = remote_url.replace(":", "/").replace("git@", "https://").replace(".git", "")
+            else:
+                remote_url = remote_url.replace(".git", "")
+            github_url = remote_url
+        except Exception:
+            pass
+
+        return tag, hexsha_short, hexsha, github_url
     except Exception as e:
         print(f"Error retrieving git info: {e}")
-        return None, None
+        return None, None, None, None
 
 
 def is_allowed_file(filename: str) -> bool:
@@ -80,7 +95,7 @@ def delete_input():
 def index():
     """Main route for uploading and converting files."""
     delete_output()
-    version, hexsha = get_git_version()
+    version, hexsha_short, hexsha_full, github_url = get_git_version()
     error = None
 
     if request.method == "POST":
@@ -115,7 +130,7 @@ def index():
             error = "Please upload a valid Excel file (.xlsx)"
 
     return render_template(
-        "index.jinja", version=version, hexsha=hexsha, error=error
+        "index.jinja", version=version, hexsha_short=hexsha_short, hexsha_full=hexsha_full, github_url=github_url, error=error
     )
 
 
