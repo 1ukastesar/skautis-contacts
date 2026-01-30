@@ -45,11 +45,11 @@ def is_allowed_file(filename: str) -> bool:
 
 
 def delete_output():
-    """Delete all files in the output folder except .gitkeep."""
+    """Delete all files in the output folder except .gitignore."""
     folder = "static/output"
     if os.path.exists(folder):
         for file_name in os.listdir(folder):
-            if file_name != ".gitkeep":
+            if file_name != ".gitignore":
                 file_path = os.path.join(folder, file_name)
                 try:
                     if os.path.isfile(file_path) or os.path.islink(file_path):
@@ -61,11 +61,11 @@ def delete_output():
 
 
 def delete_input():
-    """Delete all files in the input folder except .gitkeep."""
+    """Delete all files in the input folder except .gitignore."""
     folder = "static/input"
     if os.path.exists(folder):
         for file_name in os.listdir(folder):
-            if file_name != ".gitkeep":
+            if file_name != ".gitignore":
                 file_path = os.path.join(folder, file_name)
                 try:
                     if os.path.isfile(file_path) or os.path.islink(file_path):
