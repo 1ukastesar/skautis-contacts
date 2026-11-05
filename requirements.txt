@@ -7,5 +7,5 @@ pandas==2.3.3
 Flask==3.0.0
 Werkzeug==3.0.1
 Jinja2==3.1.2
-gitpython==3.1.41
+gitpython==3.2.1
 gunicorn==23.0.0
