@@ -106,22 +106,44 @@ def clean_email(val: object) -> str:
     return clean_str(val)
 
 
-def detect_header_row(file_path: str) -> int:
+def inspect_input_file(file_path: str) -> tuple[int | None, bool]:
     """
-    Find the 0-indexed row containing table headers ('Jméno' and 'Příjmení').
-    Returns 6 (row 7 in Excel) as fallback.
+    Inspect the Excel file for SkautIS structure and find the header row.
+
+    Returns:
+        (header_row, is_skautis)
+        header_row: 0-indexed row containing table headers ('Jméno' and 'Příjmení'), or None.
+        is_skautis: True if the file looks like a SkautIS export.
     """
     try:
         wb = openpyxl.load_workbook(file_path, read_only=True)
         ws = wb.active
+        header_row = None
+        is_skautis = False
+
         for idx, row in enumerate(ws.iter_rows(values_only=True)):
-            if row and "Jméno" in row and "Příjmení" in row:
+            if not row:
+                continue
+            row_str = " ".join(str(cell) for cell in row if cell is not None)
+            if "skautIS" in row_str or "Jednotky" in row_str or "Osoby" in row_str:
+                is_skautis = True
+            if "Jméno" in row and "Příjmení" in row:
+                header_row = idx
                 wb.close()
-                return idx
+                return header_row, is_skautis
         wb.close()
+        return header_row, is_skautis
     except Exception:
-        pass
-    return 6
+        return None, False
+
+
+def detect_header_row(file_path: str) -> int | None:
+    """
+    Find the 0-indexed row containing table headers ('Jméno' and 'Příjmení').
+    Returns None if headers are not found.
+    """
+    header_row, _ = inspect_input_file(file_path)
+    return header_row
 
 
 def convert(input_path: str, output_path: str) -> None:
@@ -148,93 +170,117 @@ def convert(input_path: str, output_path: str) -> None:
         input_path = abs_path
 
     try:
-        header_row = detect_header_row(input_path)
+        header_row, is_skautis = inspect_input_file(input_path)
+
+        if header_row is None:
+            if is_skautis:
+                raise ConversionError(
+                    "Input file contains only header and no contact data. "
+                    "Check if the export was generated with subordinate units ('Včetně podřízených jednotek')."
+                )
+            raise ConversionError(
+                "Could not find contacts table header in the input file."
+            )
+
         df_raw = pd.read_excel(
             input_path,
             skiprows=range(0, header_row),
             dtype=str,
         )
 
+        if df_raw.empty or "Jméno" not in df_raw.columns:
+            raise ConversionError(
+                "Input file contains only header and no contact data. "
+                "Check if the export was generated with subordinate units ('Včetně podřízených jednotek')."
+            )
+
         output_rows = []
 
-        if not df_raw.empty and "Jméno" in df_raw.columns:
-            for _, row in df_raw.iterrows():
-                given_name = clean_str(row.get("Jméno"))
-                family_name = clean_str(row.get("Příjmení"))
-                child_name = f"{given_name} {family_name}".strip()
-                nickname = clean_str(row.get("Přezdívka"))
-                jednotka = clean_str(row.get("Jednotka"))
-                category = clean_str(row.get("Kategorie"))
-                category_plural = CATEGORY_PLURAL_MAP.get(category, category)
+        for _, row in df_raw.iterrows():
+            given_name = clean_str(row.get("Jméno"))
+            family_name = clean_str(row.get("Příjmení"))
+            child_name = f"{given_name} {family_name}".strip()
+            nickname = clean_str(row.get("Přezdívka"))
+            jednotka = clean_str(row.get("Jednotka"))
+            category = clean_str(row.get("Kategorie"))
+            category_plural = CATEGORY_PLURAL_MAP.get(category, category)
 
-                group_parts = []
-                if jednotka:
-                    group_parts.append(jednotka)
-                if category_plural:
-                    group_parts.append(category_plural)
-                group_parts.append("* myContacts")
-                group_membership = " ::: ".join(group_parts)
+            group_parts = []
+            if jednotka:
+                group_parts.append(jednotka)
+            if category_plural:
+                group_parts.append(category_plural)
+            group_parts.append("* myContacts")
+            group_membership = " ::: ".join(group_parts)
 
-                contacts = [
-                    (
-                        "Dítě",
-                        format_phone(row.get("Telefon / mobil (hlavní)")),
-                        clean_email(row.get("E-mail (hlavní)")),
-                    ),
-                    (
-                        "Otec",
-                        format_phone(row.get("Otec: telefon")),
-                        clean_email(row.get("Otec: mail")),
-                    ),
-                    (
-                        "Matka",
-                        format_phone(row.get("Matka: telefon")),
-                        clean_email(row.get("Matka: mail")),
-                    ),
-                ]
+            contacts = [
+                (
+                    "Dítě",
+                    format_phone(row.get("Telefon / mobil (hlavní)")),
+                    clean_email(row.get("E-mail (hlavní)")),
+                ),
+                (
+                    "Otec",
+                    format_phone(row.get("Otec: telefon")),
+                    clean_email(row.get("Otec: mail")),
+                ),
+                (
+                    "Matka",
+                    format_phone(row.get("Matka: telefon")),
+                    clean_email(row.get("Matka: mail")),
+                ),
+            ]
 
-                for role, phone, email in contacts:
-                    if phone or email:
-                        contact_name = f"{child_name} - {role}" if child_name else role
-                        contact_family = f"{family_name} - {role}".strip() if family_name else role
-                        row_dict = {
-                            "Name": contact_name,
-                            "Given Name": given_name,
-                            "Additional Name": "",
-                            "Family Name": contact_family,
-                            "Yomi Name": "",
-                            "Given Name Yomi": "",
-                            "Additional Name Yomi": "",
-                            "Family Name Yomi": "",
-                            "Name Prefix": "",
-                            "Name Suffix": "",
-                            "Initials": "",
-                            "Nickname": nickname,
-                            "Short Name": "",
-                            "Maiden Name": "",
-                            "Birthday": "",
-                            "Gender": "",
-                            "Location": "",
-                            "Billing Information": "",
-                            "Mileage": "",
-                            "Occupation": "",
-                            "Hobby": "",
-                            "Sensitivity": "",
-                            "Priority": "",
-                            "Subject": "",
-                            "Notes": "",
-                            "Language": "",
-                            "Photo": "",
-                            "Group Membership": group_membership,
-                            "E-mail 1 - Type": "Home" if email else "",
-                            "E-mail 1 - Value": email,
-                            "Phone 1 - Type": "Mobile" if phone else "",
-                            "Phone 1 - Value": phone,
-                        }
-                        output_rows.append(row_dict)
+            for role, phone, email in contacts:
+                if phone or email:
+                    contact_name = f"{child_name} - {role}" if child_name else role
+                    contact_family = f"{family_name} - {role}".strip() if family_name else role
+                    row_dict = {
+                        "Name": contact_name,
+                        "Given Name": given_name,
+                        "Additional Name": "",
+                        "Family Name": contact_family,
+                        "Yomi Name": "",
+                        "Given Name Yomi": "",
+                        "Additional Name Yomi": "",
+                        "Family Name Yomi": "",
+                        "Name Prefix": "",
+                        "Name Suffix": "",
+                        "Initials": "",
+                        "Nickname": nickname,
+                        "Short Name": "",
+                        "Maiden Name": "",
+                        "Birthday": "",
+                        "Gender": "",
+                        "Location": "",
+                        "Billing Information": "",
+                        "Mileage": "",
+                        "Occupation": "",
+                        "Hobby": "",
+                        "Sensitivity": "",
+                        "Priority": "",
+                        "Subject": "",
+                        "Notes": "",
+                        "Language": "",
+                        "Photo": "",
+                        "Group Membership": group_membership,
+                        "E-mail 1 - Type": "Home" if email else "",
+                        "E-mail 1 - Value": email,
+                        "Phone 1 - Type": "Mobile" if phone else "",
+                        "Phone 1 - Value": phone,
+                    }
+                    output_rows.append(row_dict)
+
+        if not output_rows:
+            raise ConversionError(
+                "Input file contains only header and no contact data. "
+                "Check if the export was generated with subordinate units ('Včetně podřízených jednotek')."
+            )
 
         df_out = pd.DataFrame(output_rows, columns=GOOGLE_CONTACTS_COLUMNS)
 
+    except ConversionError:
+        raise
     except FileNotFoundError:
         raise FileNotFoundError("Input file not found.")
     except IOError:

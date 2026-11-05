@@ -10,7 +10,7 @@ import shutil
 
 from flask import Flask, request, render_template, send_from_directory
 from werkzeug.utils import secure_filename
-from convert import convert
+from convert import convert, ConversionError
 from git import Repo
 
 app = Flask(__name__)
@@ -121,6 +121,11 @@ def index():
                     as_attachment=True,
                     download_name=output_filename,
                 )
+            except ConversionError as e:
+                error = str(e)
+                # Clean up on error
+                if os.path.exists(input_path):
+                    os.remove(input_path)
             except Exception as e:
                 error = f"Conversion failed: {str(e)}"
                 # Clean up on error

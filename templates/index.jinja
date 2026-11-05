@@ -68,6 +68,77 @@
             margin: 10px 0;
         }
 
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(3px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .modal-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+            max-width: 480px;
+            width: 88%;
+            text-align: center;
+            animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .modal-icon {
+            font-size: 42px;
+            margin-bottom: 12px;
+        }
+
+        .modal-title {
+            color: #b30000;
+            margin: 0 0 12px 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .modal-message {
+            color: #444;
+            font-size: 15px;
+            line-height: 1.5;
+            margin: 0 0 24px 0;
+            word-break: break-word;
+        }
+
+        .modal-close-btn {
+            background-color: #1a5f2a;
+            color: white;
+            border: none;
+            padding: 10px 26px;
+            font-size: 15px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+
+        .modal-close-btn:hover {
+            background-color: #2a7f3a;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
         .footer {
             margin-top: 30px;
             color: #888;
@@ -118,16 +189,49 @@
 
             {% if error %}
             <div class="error">{{ error }}</div>
+
+            <div class="modal-overlay" id="errorModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+                <div class="modal-card">
+                    <div class="modal-icon">⚠️</div>
+                    <h2 id="modalTitle" class="modal-title">Chyba při zpracování</h2>
+                    <p class="modal-message">{{ error }}</p>
+                    <button type="button" class="modal-close-btn" onclick="closeModal()">Rozumím</button>
+                </div>
+            </div>
             {% endif %}
 
             <form method="POST" action="/" enctype="multipart/form-data" id="uploadForm">
-                <input type="file" name="file" accept=".xlsx" id="fileInput">
+                <input type="file" name="file" accept=".xlsx" id="fileInput" required>
                 <br>
                 <button type="submit">Převést a stáhnout</button>
             </form>
         </div>
     </div>
     <script>
+        function closeModal() {
+            var modal = document.getElementById('errorModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // Close modal when clicking outside the card
+        var modalOverlay = document.getElementById('errorModal');
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === modalOverlay) {
+                    closeModal();
+                }
+            });
+        }
+
         // Clear file input after form submission (download starts)
         document.getElementById('uploadForm').addEventListener('submit', function() {
             setTimeout(function() {
