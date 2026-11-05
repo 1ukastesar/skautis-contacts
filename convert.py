@@ -9,8 +9,10 @@ Author: Lukas Tesar <lukastesar03@gmail.com>
 
 import argparse
 import os
+import re
 import sys
 
+import openpyxl
 import pandas as pd
 
 
@@ -27,9 +29,107 @@ def die(error):
     sys.exit(1)
 
 
+GOOGLE_CONTACTS_COLUMNS = [
+    "Name",
+    "Given Name",
+    "Additional Name",
+    "Family Name",
+    "Yomi Name",
+    "Given Name Yomi",
+    "Additional Name Yomi",
+    "Family Name Yomi",
+    "Name Prefix",
+    "Name Suffix",
+    "Initials",
+    "Nickname",
+    "Short Name",
+    "Maiden Name",
+    "Birthday",
+    "Gender",
+    "Location",
+    "Billing Information",
+    "Mileage",
+    "Occupation",
+    "Hobby",
+    "Sensitivity",
+    "Priority",
+    "Subject",
+    "Notes",
+    "Language",
+    "Photo",
+    "Group Membership",
+    "E-mail 1 - Type",
+    "E-mail 1 - Value",
+    "Phone 1 - Type",
+    "Phone 1 - Value",
+]
+
+CATEGORY_PLURAL_MAP = {
+    "Benjamínek": "Benjamínci",
+    "Vlče": "Vlčata",
+    "Světluška": "Světlušky",
+    "Skaut": "Skauti",
+    "Skautka": "Skautky",
+    "Rover": "Roveři",
+    "Ranger": "Rangeři",
+}
+
+
+def clean_str(val: object) -> str:
+    """Clean and strip string value, treating NaN / None as empty."""
+    if pd.isna(val):
+        return ""
+    s = str(val).strip()
+    return "" if s.lower() == "nan" else s
+
+
+def format_phone(val: object) -> str:
+    """Format phone number with country code."""
+    s = clean_str(val)
+    if not s:
+        return ""
+    if s.endswith(".0"):
+        s = s[:-2]
+    # Remove whitespace, hyphens, and dots
+    s = re.sub(r"[\s\-\.]+", "", s)
+    if not s:
+        return ""
+    if s.startswith("+"):
+        return s
+    if s.startswith("00"):
+        return f"+{s[2:]}"
+    return f"+420{s}"
+
+
+def clean_email(val: object) -> str:
+    """Clean and strip email address."""
+    return clean_str(val)
+
+
+def detect_header_row(file_path: str) -> int:
+    """
+    Find the 0-indexed row containing table headers ('Jméno' and 'Příjmení').
+    Returns 6 (row 7 in Excel) as fallback.
+    """
+    try:
+        wb = openpyxl.load_workbook(file_path, read_only=True)
+        ws = wb.active
+        for idx, row in enumerate(ws.iter_rows(values_only=True)):
+            if row and "Jméno" in row and "Příjmení" in row:
+                wb.close()
+                return idx
+        wb.close()
+    except Exception:
+        pass
+    return 6
+
+
 def convert(input_path: str, output_path: str) -> None:
     """
     Convert SkautIS Excel export to Google Contacts CSV format.
+
+    Each child's contacts (child, father, mother) are split into individual entries
+    formatted as 'Jméno dítěte - Matka/Otec/Dítě'.
 
     Args:
         input_path: Path to input Excel file (.xlsx)
@@ -48,99 +148,92 @@ def convert(input_path: str, output_path: str) -> None:
         input_path = abs_path
 
     try:
-        # First, we (try to) load the input file and parse it into DataFrame (pd)
-        skip_rows = 6
-        use_cols = [0, 1, 2, 4, 7, 8, 9, 10, 11, 12, 13]
-        df = pd.read_excel(
+        header_row = detect_header_row(input_path)
+        df_raw = pd.read_excel(
             input_path,
-            skiprows=range(0, skip_rows),
-            usecols=use_cols,
-            dtype={
-                "Matka: telefon": str,
-                "Otec: telefon": str,
-                "Telefon / mobil (hlavní)": str,
-            },
+            skiprows=range(0, header_row),
+            dtype=str,
         )
 
-        # Then we'll make it look like a Google CSV:
-        # - some columns we'll rename
-        rename_rules = {
-            "Jméno": "Given Name",
-            "Příjmení": "Family Name",
-            "Přezdívka": "Nickname",
-            "Jednotka": "Group Membership",
-            "Kategorie": "Category",
-            "E-mail (hlavní)": "E-mail 1 - Value",
-            "Otec: mail": "E-mail 2 - Value",
-            "Matka: mail": "E-mail 3 - Value",
-            "Telefon / mobil (hlavní)": "Phone 1 - Value",
-            "Otec: telefon": "Phone 2 - Value",
-            "Matka: telefon": "Phone 3 - Value",
-        }
-        df.rename(columns=rename_rules, inplace=True)
+        output_rows = []
 
-        # - some just need to be added (with no values, in most cases)
-        add_cols = [
-            [0, "Name", ""],
-            [2, "Additional Name", ""],
-            [4, "Yomi Name", ""],
-            [5, "Given Name Yomi", ""],
-            [6, "Additional Name Yomi", ""],
-            [7, "Family Name Yomi", ""],
-            [8, "Name Prefix", ""],
-            [9, "Name Suffix", ""],
-            [10, "Initials", ""],
-            [12, "Short Name", ""],
-            [13, "Maiden Name", ""],
-            [14, "Birthday", ""],
-            [15, "Gender", ""],
-            [16, "Location", ""],
-            [17, "Billing Information", ""],
-            [18, "Mileage", ""],
-            [19, "Occupation", ""],
-            [20, "Hobby", ""],
-            [21, "Sensitivity", ""],
-            [22, "Priority", ""],
-            [23, "Subject", ""],
-            [24, "Notes", ""],
-            [25, "Language", ""],
-            [26, "Photo", ""],
-            [28, "E-mail 1  - Type", "Dítě"],
-            [29, "Phone 1 - Type", "Dítě"],
-            [30, "E-mail 2 - Type", "Otec"],
-            [31, "Phone 2 - Type", "Otec"],
-            [32, "E-mail 3 - Type", "* Matka"],
-            [33, "Phone 3 - Type", "* Matka"],
-        ]
-        for col in add_cols:
-            df.insert(col[0], col[1], col[2])
+        if not df_raw.empty and "Jméno" in df_raw.columns:
+            for _, row in df_raw.iterrows():
+                given_name = clean_str(row.get("Jméno"))
+                family_name = clean_str(row.get("Příjmení"))
+                child_name = f"{given_name} {family_name}".strip()
+                nickname = clean_str(row.get("Přezdívka"))
+                jednotka = clean_str(row.get("Jednotka"))
+                category = clean_str(row.get("Kategorie"))
+                category_plural = CATEGORY_PLURAL_MAP.get(category, category)
 
-        # - this one combines values from two other columns instead (Given + Family name = Full name)
-        df["Name"] = df["Given Name"] + " " + df["Family Name"]
+                group_parts = []
+                if jednotka:
+                    group_parts.append(jednotka)
+                if category_plural:
+                    group_parts.append(category_plural)
+                group_parts.append("* myContacts")
+                group_membership = " ::: ".join(group_parts)
 
-        # - replace singular with plural in category
-        # Avoid inplace on a Series (pandas will warn about chained assignment).
-        # Assign the replaced Series back to the DataFrame to ensure we operate
-        # on the original object (compatible with pandas 3.0 behavior).
-        df["Category"] = df["Category"].replace(
-            {"Vlče": "Vlčata", "Skaut": "Skauti", "Rover": "Roveři"}
-        )
+                contacts = [
+                    (
+                        "Dítě",
+                        format_phone(row.get("Telefon / mobil (hlavní)")),
+                        clean_email(row.get("E-mail (hlavní)")),
+                    ),
+                    (
+                        "Otec",
+                        format_phone(row.get("Otec: telefon")),
+                        clean_email(row.get("Otec: mail")),
+                    ),
+                    (
+                        "Matka",
+                        format_phone(row.get("Matka: telefon")),
+                        clean_email(row.get("Matka: mail")),
+                    ),
+                ]
 
-        # - and some need bigger changes (combining, renaming and adding values)
-        df["Group Membership"] = df.apply(
-            lambda row: f"{row['Group Membership']} ::: {row['Category']} ::: * myContacts",
-            axis=1,
-        )
+                for role, phone, email in contacts:
+                    if phone or email:
+                        contact_name = f"{child_name} - {role}" if child_name else role
+                        contact_family = f"{family_name} - {role}".strip() if family_name else role
+                        row_dict = {
+                            "Name": contact_name,
+                            "Given Name": given_name,
+                            "Additional Name": "",
+                            "Family Name": contact_family,
+                            "Yomi Name": "",
+                            "Given Name Yomi": "",
+                            "Additional Name Yomi": "",
+                            "Family Name Yomi": "",
+                            "Name Prefix": "",
+                            "Name Suffix": "",
+                            "Initials": "",
+                            "Nickname": nickname,
+                            "Short Name": "",
+                            "Maiden Name": "",
+                            "Birthday": "",
+                            "Gender": "",
+                            "Location": "",
+                            "Billing Information": "",
+                            "Mileage": "",
+                            "Occupation": "",
+                            "Hobby": "",
+                            "Sensitivity": "",
+                            "Priority": "",
+                            "Subject": "",
+                            "Notes": "",
+                            "Language": "",
+                            "Photo": "",
+                            "Group Membership": group_membership,
+                            "E-mail 1 - Type": "Home" if email else "",
+                            "E-mail 1 - Value": email,
+                            "Phone 1 - Type": "Mobile" if phone else "",
+                            "Phone 1 - Value": phone,
+                        }
+                        output_rows.append(row_dict)
 
-        # - add +420 in the beginning of telephone numbers to be recognized correctly
-        for i in [1, 2, 3]:
-            key = f"Phone {i} - Value"
-            df[key] = df[key].apply(
-                lambda num: f"+420{str(num)}" if pd.notna(num) and num else ""
-            )
-
-        # - as a last thing, we drop the columns we no longer need
-        df.drop(columns="Category", inplace=True)
+        df_out = pd.DataFrame(output_rows, columns=GOOGLE_CONTACTS_COLUMNS)
 
     except FileNotFoundError:
         raise FileNotFoundError("Input file not found.")
@@ -154,10 +247,11 @@ def convert(input_path: str, output_path: str) -> None:
         )
 
     # Everything done, save it
-
     try:
-        # We'll try to export it as csv and write to given path
-        df.to_csv(output_path, index=None, header=True)
+        output_dir = os.path.dirname(os.path.abspath(output_path))
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+        df_out.to_csv(output_path, index=False, header=True)
     except IOError:
         raise IOError(
             "An I/O error occurred when trying to save the output file. Maybe it is already used by another process?"
